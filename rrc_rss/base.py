@@ -2,6 +2,7 @@ from datetime import datetime
 import dateutil
 import pytz
 
+from tqdm import tqdm
 from requests_html import HTMLSession
 from podgen import Podcast, Episode, Media
 import gistyc
@@ -23,11 +24,14 @@ class RRCShow():
         self.episode_data = []
 
     def _scrape(self):
+        """
+        Scrape the episodes from the webpage
+        """
 
         session = HTMLSession()
 
         # Send a GET request to the webpage and render the Javascript
-        print(f'Scraping {self.url}')
+        print(f'Scraping episodes from {self.url}')
         response = session.get(self.url)
         response.html.render()
 
@@ -35,9 +39,9 @@ class RRCShow():
         items = response.html.find('div.news-item.news-item--with-audio')
 
         self.episode_data = []
-        for item in items:
+        for item in tqdm(items, desc='Episodes'):
 
-            if len(self.episode_data) >= self.max_episodes:
+            if self.max_episodes is not None and len(self.episode_data) >= self.max_episodes:
                 break
 
             # Find the sub-item with class 'news-item__title' within the news item
@@ -51,7 +55,7 @@ class RRCShow():
                     if item_page_url == item.base_url:
                         continue
 
-                    print(f'Scraping {item_page_url}')
+                    # print(f'Scraping {item_page_url}')
                     item_page = session.get(item_page_url)
                     item_page.html.render()
 
@@ -95,10 +99,14 @@ class RRCShow():
                         'audio_type': audio_type
                     })
 
-                    if len(self.episode_data) >= self.max_episodes:
+                    if self.max_episodes is not None and len(self.episode_data) >= self.max_episodes:
                         break
 
     def _create_podcast_xml(self):
+        """
+        Create the podcast XML file
+        """
+
         podcast = Podcast(
             name=self.title,
             description=self.description,
@@ -115,19 +123,44 @@ class RRCShow():
             )
 
             podcast.add_episode(episode)
-            print(f'{self.title}: {episode.title} , {episode.publication_date}')
+            #print(f'{self.title}: {episode.title} , {episode.publication_date}')
 
+        print(f'Writing podcast XML to {self.xmlfile}')
         podcast.rss_file(self.xmlfile)
         return podcast
 
     def _push_to_gist(self):
+        """
+        Push the podcast XML to a Github Gist
+        """
+
         if self.gist_token:
             gist_api = gistyc.GISTyc(auth_token=self.gist_token)
-            gist_api.create_gist(file_name=self.xmlfile)
+            gists = gist_api.get_gists()
+
+            # Check if the gist is already present
+            is_gist_present = False
+            for gist in gists:
+                if self.xmlfile in gist['files']:
+                    is_gist_present = True
+                    break
+
+            if is_gist_present:
+                print(f'Updating gist {self.xmlfile}')
+                gist_api.update_gist(file_name=self.xmlfile)
+            else:
+                print(f'Creating gist {self.xmlfile}')
+                gist_api.create_gist(file_name=self.xmlfile)
         else:
             print('No Github token provided. Not pushing to Github gists.')
 
     def run(self):
+        """
+        Run the show
+        """
+        print("=========================================")
+        print(f'Show: {self.title}')
+        print("=========================================")
         self._scrape()
         self._create_podcast_xml()
         self._push_to_gist()
