@@ -76,6 +76,8 @@ $ rrc_rss
 
 Podcast XML files are uploaded to Github Gists.
 
+Add the following links to your podcast player:
+
 - [Idei în nocturnă - Izvoare de filozofie](https://gist.githubusercontent.com/nikcleju/6ec549decf33e80ba73705395aa07dfd/raw/xml_idei_in_nocturna_izvoare_de_filosofie.xml)
 - [Idei în nocturnă - Pagini de istorie](https://gist.githubusercontent.com/nikcleju/40bfe574904083f529c92be0f20b7fd2/raw/xml_idei_in_nocturna_pagini_de_istorie.xml)
 - [Texte și pretexte](https://gist.githubusercontent.com/nikcleju/5c1b96588c51261ad6ef72d315a750ab/raw/xml_texte_si_pretexte.xml)
