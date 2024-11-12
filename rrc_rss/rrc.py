@@ -1,6 +1,8 @@
 import dateutil
 import pytz
 import scrapy
+import pickle
+from slugify import slugify
 from datetime import datetime
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -41,9 +43,10 @@ class RRCShowSpider(scrapy.Spider):
         }
     }
 
-    def __init__(self, max_episodes=None, *args, **kwargs):
+    def __init__(self, max_episodes=None, do_cache=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max_episodes = max_episodes
+        self.do_cache = do_cache
 
     def parse(self, response):
         title = response.css('h1.cat-header__title::text').get(default='').strip()
@@ -64,9 +67,28 @@ class RRCShowSpider(scrapy.Spider):
         if self.max_episodes:
             episode_urls = episode_urls[:self.max_episodes]
 
-        # Follow episode urls
-        for url in episode_urls:
-            yield response.follow(url, callback=self.parse_episode, cb_kwargs={'show_name': title})
+        # Load episode urls from pickle file
+        old_episode_urls = []
+        if self.do_cache:
+            pkl_filename = 'cache/' + slugify(title) + '.pkl'
+            try:
+                with open(pkl_filename, 'rb') as f:
+                    old_episode_urls = pickle.load(f)
+            except FileNotFoundError:
+                pass
+
+        # Keep only the new episodes
+        new_episode_urls = list(set(episode_urls) - set(old_episode_urls))
+
+        # Follow new episode urls
+        for url in new_episode_urls:
+            if url not in old_episode_urls:
+                yield response.follow(url, callback=self.parse_episode, cb_kwargs={'show_name': title})
+
+        # Save episode urls to pickle file
+        if self.do_cache:
+            with open(pkl_filename, 'wb') as f:
+                pickle.dump(episode_urls, f)
 
     def parse_episode(self, response, show_name):
 
@@ -91,17 +113,18 @@ class RRCShowSpider(scrapy.Spider):
             )
 
 
-class RRCShowsListSpider(scrapy.Spider):
+class RRCShowListSpider(scrapy.Spider):
     name = 'shows_list_spider'
 
-    def __init__(self, min_episodes=0, *args, **kwargs):
+    def __init__(self, min_episodes=0, do_cache=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.min_episodes = min_episodes
+        self.do_cache = do_cache
 
     def parse(self, response):
         show_urls = response.css('div.news-item a.link::attr(href)').getall()
         for url in show_urls:
-            yield response.follow(url, callback=self.parse_show)
+            yield response.follow(url, callback=RRCShowSpider.parse)
 
     def parse_show(self, response):
         show_spider = RRCShowSpider(url=response.url, max_episodes=self.min_episodes)

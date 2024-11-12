@@ -8,13 +8,8 @@ Be creative! do whatever you want!
 - Import things from your .base module
 """
 
-import dotenv
 from scrapy.crawler import CrawlerProcess
-
-from rrc_rss.rrc import RRCShowSpider
-
-dotenv.load_dotenv()
-
+from rrc_rss.rrc import RRCShowSpider, RRCShowListSpider
 
 
 def main():  # pragma: no cover
@@ -25,16 +20,26 @@ def main():  # pragma: no cover
     This is your program's entry point.
     """
 
-    # Define the shows
-    rrc_shows = [
-        "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-izvoare-de-filosofie/",
-        "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-pagini-de-istorie/",
-        "https://www.radioromaniacultural.ro/emisiuni/confluente/",
-        "https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/",
-        "https://www.radioromaniacultural.ro/podcast/o-ora-cu-dana/"
+    # # Define the shows
+    # rrc_shows = [
+    #     "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-izvoare-de-filosofie/",
+    #     "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-pagini-de-istorie/",
+    #     "https://www.radioromaniacultural.ro/emisiuni/confluente/",
+    #     "https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/",
+    #     "https://www.radioromaniacultural.ro/podcast/o-ora-cu-dana/"
+    # ]
+
+    # # Run the spiders
+    # process = CrawlerProcess()
+    # process.crawl(RRCShowSpider, start_urls=rrc_shows, do_cache=True)  #, max_episodes=2
+    # process.start()
+
+    # Define show lists
+    rrc_show_lists = [
+        "https://www.radioromaniacultural.ro/emisiuni",
+        "https://www.radioromaniacultural.ro/podcast"
     ]
 
     # Run the spiders
     process = CrawlerProcess()
-    process.crawl(RRCShowSpider, start_urls=rrc_shows)  #, max_episodes=2
-    process.start()
+    process.crawl(RRCShowListSpider, start_urls=rrc_show_lists, do_cache=True)

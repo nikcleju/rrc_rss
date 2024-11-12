@@ -32,7 +32,7 @@ class CreatePodcastPipeline:
 
     def open_spider(self, spider):
         # Load existing podcasts from cache file
-        if CreatePodcastPipeline.do_cache
+        if CreatePodcastPipeline.do_cache:
             try:
                 with open('podcasts.pkl', 'rb') as f:
                     self.podcasts = pickle.load(f)

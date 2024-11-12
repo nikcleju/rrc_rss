@@ -1,6 +1,6 @@
 
 from slugify import slugify
-from podgen import
+from podgen import Podcast
 import pickle
 import gistyc
 import dropbox
