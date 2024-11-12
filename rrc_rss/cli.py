@@ -8,13 +8,14 @@ Be creative! do whatever you want!
 - Import things from your .base module
 """
 
-import os
 import dotenv
+from scrapy.crawler import CrawlerProcess
 
-from rrc_rss.upload import PodcastsUploader
-from rrc_rss.rrc import RRCShow, RRCShowsList
+from rrc_rss.rrc import RRCShowSpider
 
 dotenv.load_dotenv()
+
+
 
 def main():  # pragma: no cover
     """
@@ -33,15 +34,7 @@ def main():  # pragma: no cover
         "https://www.radioromaniacultural.ro/podcast/o-ora-cu-dana/"
     ]
 
-    # Scrape the podcasts
-    podcasts = [RRCShow(url=url).scrape() for url in rrc_shows]
-
-    # Upload the podcasts to Dropbox
-    PodcastsUploader(
-        podcasts=podcasts,
-        dropbox_folder=os.getenv('DROPBOX_FOLDER'),
-        dropbox_token=os.getenv('DROPBOX_ACCESS_TOKEN'),
-    ).to_dropbox()
-
-
-
+    # Run the spiders
+    process = CrawlerProcess()
+    process.crawl(RRCShowSpider, start_urls=rrc_shows)  #, max_episodes=2
+    process.start()

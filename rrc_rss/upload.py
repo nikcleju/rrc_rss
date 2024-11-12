@@ -1,11 +1,10 @@
-from abc import ABC
-from slugify import slugify
 
-from podgen import Podcast, Episode, Media
-import dotenv
+from slugify import slugify
+from podgen import
+import pickle
 import gistyc
-import pastebin
 import dropbox
+import rrc_rss.pastebin as pastebin
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -20,7 +19,10 @@ class PodcastsUploader():
                  pastebin_username=None,
                  pastebin_password=None,
                  dropbox_token=None,
-                 dropbox_folder=None):
+                 dropbox_refresh_token=None,
+                 dropbox_app_key=None,
+                 dropbox_app_secret=None,
+                 dropbox_folder=''):
 
         if not isinstance(podcasts, list) and not isinstance(podcasts, tuple):
             podcasts = [podcasts]
@@ -31,7 +33,11 @@ class PodcastsUploader():
         self.pastebin_username = pastebin_username
         self.pastebin_password = pastebin_password
         self.dropbox_token = dropbox_token
+        self.dropbox_refresh_token = dropbox_refresh_token
+        self.dropbox_app_key = dropbox_app_key
+        self.dropbox_app_secret = dropbox_app_secret
         self.dropbox_folder = dropbox_folder
+
 
     @staticmethod
     def filename(podcast: Podcast):
@@ -89,12 +95,17 @@ class PodcastsUploader():
             logging.info('No Dropbox token provided. Not pushing to Dropbox.')
             return
 
-        if not self.dropbox_folder:
-            logging.info('No Dropbox folder provided. Not pushing to Dropbox.')
+        if not self.dropbox_refresh_token:
+            logging.info('No Dropbox refresh token provided. Not pushing to Dropbox.')
             return
 
         # Connect to Dropbox
-        dbx = dropbox.Dropbox(self.dropbox_token)
+        dbx = dropbox.Dropbox(
+            oauth2_access_token=self.dropbox_token,
+            oauth2_refresh_token=self.dropbox_refresh_token,
+            app_key=self.dropbox_app_key,
+            app_secret=self.dropbox_app_secret
+        )
 
         for podcast in self.podcasts:
 
@@ -109,3 +120,8 @@ class PodcastsUploader():
                 logging.error(f"Error uploading {podcast.name} to Dropbox: {e}")
 
             logging.info(f"{podcast.name} written to Dropbox at {file_path}")
+
+        # Save podcasts files so we can reload them next time
+        pickle_file = 'podcasts.pkl'
+        with open(pickle_file, 'wb') as f:
+            pickle.dump(self.podcasts, f)

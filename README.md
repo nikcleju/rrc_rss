@@ -74,9 +74,9 @@ $ rrc_rss
 
 ## Podcasts
 
-Podcast XML files are uploaded to Dropbox, and are updated daily. Add the links to your podcast player.
+Podcast XML files are uploaded to Dropbox , and are updated daily. Add the URLs of the XML files to your podcast player.
 
-https://www.dropbox.com/scl/fo/wvivrur6f2z926awi2i36/AA3gYk4FUZj3wuTPGQdr6oo?rlkey=igq79picfab145b4q2e21vzvm&e=3&st=vrofu90j&dl=0
+[Go to RSS feeds](https://www.dropbox.com/scl/fo/wvivrur6f2z926awi2i36/AA3gYk4FUZj3wuTPGQdr6oo?rlkey=igq79picfab145b4q2e21vzvm&e=3&st=vrofu90j&dl=0)
 
 <!-- Podcast XML files are uploaded to Github Gists. -->
 
