@@ -10,6 +10,9 @@ Be creative! do whatever you want!
 
 from rrc_rss.show_definitions import shows
 
+from base import PodcastUploader
+from rrc_rss.rrc import RRCShow
+
 def main():  # pragma: no cover
     """
     The main function executes on commands:
@@ -27,6 +30,10 @@ def main():  # pragma: no cover
         * Run an application (Flask, FastAPI, Django, etc.)
     """
 
-    for show in shows:
-        show.run()
+    # for show in shows:
+    #     show.run()
 
+    pu = PodcastUploader(
+        RRCShow('https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/').scrape(max_episodes=2)
+    )
+    pu.to_pastebin()

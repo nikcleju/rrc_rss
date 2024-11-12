@@ -1,169 +1,82 @@
-from datetime import datetime
-import dateutil
-import pytz
+import os
+from abc import ABC
+from slugify import slugify
 
-from tqdm import tqdm
-from requests_html import HTMLSession
 from podgen import Podcast, Episode, Media
+import dotenv
 import gistyc
+import pastebin
 
-class RRCShow():
+import logging
+logging.basicConfig(level=logging.INFO)
 
-    def __init__(self, url, xmlfile, title,
-                 description='',
-                 max_episodes=10,
-                 gist_token=None):
+dotenv.load_dotenv()
 
-        self.url = url
-        self.xmlfile = xmlfile
-        self.title = title
-        self.description = description
-        self.max_episodes = max_episodes
-        self.gist_token = gist_token
 
-        self.episode_data = []
+# class WebEpisode(ABC):
+#     def scrape(self):
+#         pass
 
-    def _scrape(self):
-        """
-        Scrape the episodes from the webpage
-        """
+# class WebPodcast(ABC):
+#     def scrape(self):
+#         pass
 
-        session = HTMLSession()
+# class WebPodcastList(ABC):
+#     def scrape(self):
+#         pass
 
-        # Send a GET request to the webpage and render the Javascript
-        print(f'Scraping episodes from {self.url}')
-        response = session.get(self.url)
-        response.html.render()
 
-        # Find all div elements with the specified class
-        items = response.html.find('div.news-item.news-item--with-audio')
+class PodcastUploader():
 
-        self.episode_data = []
-        for item in tqdm(items, desc='Episodes'):
+    def __init__(self, podcast):
+        self.podcast = podcast
 
-            if self.max_episodes is not None and len(self.episode_data) >= self.max_episodes:
-                break
+    @property
+    def filename(self):
+        return slugify(self.podcast.title) + '.xml'
 
-            # Find the sub-item with class 'news-item__title' within the news item
-            elem_title = item.find('div.news-item__title', first=True)
-            title = elem_title.text if elem_title else 'No title'
+    def to_file(self, podcast: Podcast):
+        podcast.rss_file(self.filename)
 
-            if item.absolute_links:
-                for item_page_url in item.absolute_links:
+    def to_gist(self, token):
 
-                    # Workaround: skip link to main page ('https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/')
-                    if item_page_url == item.base_url:
-                        continue
-
-                    # print(f'Scraping {item_page_url}')
-                    item_page = session.get(item_page_url)
-                    item_page.html.render()
-
-                    # Find the date
-                    elem_date = item_page.html.find('p.articol__autor-data', first=True)
-                    if elem_date:
-                        date = elem_date.text.split(',')[0]
-                        date = date.\
-                            replace('Ianuarie', 'January').\
-                            replace('Februarie', 'February').\
-                            replace('Martie', 'March').\
-                            replace('Aprilie', 'April').\
-                            replace('Mai', 'May').\
-                            replace('Iunie', 'June').\
-                            replace('Iulie', 'July').\
-                            replace('August', 'August').\
-                            replace('Septembrie', 'September').\
-                            replace('Octombrie', 'October').\
-                            replace('Noiembrie', 'November').\
-                            replace('Decembrie', 'December')
-                        date = dateutil.parser.parse(date).replace(tzinfo=pytz.UTC)
-                    else:
-                        date = datetime.now()
-
-                    # Find the content
-                    elem_content = item_page.html.find('#__content', first=True)
-                    content = elem_content.text if elem_content else 'No content'
-
-                    # Audio
-                    elem_audio = item_page.html.find('source', first=True)
-                    audio = elem_audio.attrs['src'] if elem_audio else None
-                    audio_type = elem_audio.attrs['type'] if elem_audio else None
-                    if elem_audio is None or audio is None:
-                        continue
-
-                    self.episode_data.append({
-                        'title': title,
-                        'date': date,
-                        'content': content,
-                        'audio': audio,
-                        'audio_type': audio_type
-                    })
-
-                    if self.max_episodes is not None and len(self.episode_data) >= self.max_episodes:
-                        break
-
-    def _create_podcast_xml(self):
-        """
-        Create the podcast XML file
-        """
-
-        podcast = Podcast(
-            name=self.title,
-            description=self.description,
-            website=self.url,
-            explicit=False
-        )
-
-        for episode in self.episode_data:
-            episode = Episode(
-                title=episode['title'],
-                media=Media(episode['audio'], type=episode['audio_type']),
-                summary=episode['content'],
-                publication_date=episode['date']
-            )
-
-            podcast.add_episode(episode)
-            #print(f'{self.title}: {episode.title} , {episode.publication_date}')
-
-        print(f'Writing podcast XML to {self.xmlfile}')
-        podcast.rss_file(self.xmlfile)
-        return podcast
-
-    def _push_to_gist(self):
-        """
-        Push the podcast XML to a Github Gist
-        """
-
-        if self.gist_token:
-            gist_api = gistyc.GISTyc(auth_token=self.gist_token)
+        if token:
+            gist_api = gistyc.GISTyc(auth_token=token)
             gists = gist_api.get_gists()
 
             # Check if the gist is already present
             is_gist_present = False
             for gist in gists:
-                if self.xmlfile in gist['files']:
+                if self.filename in gist['files']:
                     is_gist_present = True
                     break
 
             if is_gist_present:
-                print(f'Updating gist {self.xmlfile}')
-                gist_api.update_gist(file_name=self.xmlfile)
+                logging.info(f'Updating gist {self.filename}')
+                gist_api.update_gist(file_name=self.filename)
             else:
-                print(f'Creating gist {self.xmlfile}')
-                gist_api.create_gist(file_name=self.xmlfile)
+                logging.info(f'Creating gist {self.filename}')
+                gist_api.create_gist(file_name=self.filename)
         else:
-            print('No Github token provided. Not pushing to Github gists.')
+            logging.info('No Github token provided. Not pushing to Github gists.')
 
-    def run(self):
-        """
-        Run the show
-        """
-        print("=========================================")
-        print(f'Show: {self.title}')
-        print("=========================================")
-        self._scrape()
-        self._create_podcast_xml()
-        self._push_to_gist()
 
-        return self
 
+    def to_pastebin(self):
+
+        api_key = os.getenv('PASTEBIN_API_KEY')
+        username = os.getenv('PASTEBIN_USERNAME')
+        password = os.getenv('PASTEBIN_PASSWORD')
+
+        api = pastebin.PasteBin(api_key)
+        api.api_user_key = api.create_user_key(username, password)
+
+        result = api.paste(self.podcast.rss_str(),
+                            #"aaaa",
+                            guest=False,
+                            name=self.podcast.name,
+                            format='xml',
+                            private='0',
+                            expire='N')
+        #logging.info(f'Pastebin URL: {result}')
+        print(f'Pastebin URL: {result}')

@@ -8,3 +8,6 @@ tqdm
 requests_html
 podgen
 gistyc
+python-slugify
+python-dotenv
+lxml_html_clean
