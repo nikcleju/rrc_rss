@@ -19,7 +19,7 @@ def find_element_text(source, selector, **kwargs):
     """Helper function to find an element and return its text"""
 
     elem = source.find(selector, **kwargs)
-    return elem.text if elem else None
+    return elem.text if elem else ''
 
 
 class DateTimeParser():
@@ -106,7 +106,7 @@ class RRCShow():
 
         self.url = url
 
-    def scrape(self, max_episodes=None, session=None, file=''):
+    def scrape(self, max_episodes=None, session=None):
         """
         Scrape the episodes from the webpage
         """
@@ -115,9 +115,6 @@ class RRCShow():
 
         if session is None:
             session = HTMLSession()
-
-        if max_episodes is None:
-            max_episodes = math.inf
 
         # Send a GET request to the webpage and render the Javascript
         page = session.get(self.url)
@@ -142,31 +139,23 @@ class RRCShow():
         episode_urls = [elem_episode.find('a.link', first=True).attrs['href']
                               for elem_episode in elem_episodes]
 
-        episode_count = 0
+        # Limit the number of episodes
+        if max_episodes is not None:
+            episode_urls = episode_urls[:max_episodes]
+
         for episode_url in tqdm(episode_urls, desc='Episodes'):
-
-            if episode_count >= max_episodes:
-                break
-
             episode = RRCEpisode(episode_url).scrape(session=session)
             podcast.add_episode(episode)
-            episode_count += 1
-
-        if file:
-            if file == '':
-
-                file = f'{title}.xml'
-            podcast.rss_file(file)
 
         return podcast
 
 
-class RRCShowListPage():
+class RRCShowsList():
 
     def __init__(self, url):
         self.url = url
 
-    def scrape(self, session=None):
+    def scrape(self, session=None, min_episodes=0):
         """
         Scrape the episodes from the webpage
         """
@@ -180,22 +169,17 @@ class RRCShowListPage():
         page = session.get(self.url)
         page.html.render()
 
-        # Find all div elements with the specified class
+        # Find all shows and get their urls
         elem_shows = page.html.find('div.news-item')
-
-        # Join all potential show links
-        show_urls = itertools.chain(*[elem_show.absolute_links for elem_show in elem_shows])
-
-        # Remove links to the main page link (e.g. 'https://www.radioromaniacultural.ro/emisiuni/')
-        # TODO: make nicer
-        show_urls = [show_url for show_url in show_urls if show_url != page.base_url]
+        show_urls = [elem_show.find('a.link', first=True).absolute_links.pop()
+                              for elem_show in elem_shows]
 
         podcasts = []
-
         for show_url in tqdm(show_urls, desc='Shows'):
             show = RRCShow(show_url)
             podcast = show.scrape(session=session)
-            podcasts.append(podcast)
+            if len(podcast.episodes) >= min_episodes:
+                podcasts.append(podcast)
 
         return podcasts
 

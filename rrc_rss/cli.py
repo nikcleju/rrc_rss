@@ -8,10 +8,13 @@ Be creative! do whatever you want!
 - Import things from your .base module
 """
 
-from rrc_rss.show_definitions import shows
+import os
+import dotenv
 
-from base import PodcastUploader
-from rrc_rss.rrc import RRCShow
+from rrc_rss.upload import PodcastsUploader
+from rrc_rss.rrc import RRCShow, RRCShowsList
+
+dotenv.load_dotenv()
 
 def main():  # pragma: no cover
     """
@@ -19,21 +22,26 @@ def main():  # pragma: no cover
     `python -m rrc_rss` and `$ rrc_rss `.
 
     This is your program's entry point.
-
-    You can change this function to do whatever you want.
-    Examples:
-        * Run a test suite
-        * Run a server
-        * Do some other stuff
-        * Run a command line application (Click, Typer, ArgParse)
-        * List all available tasks
-        * Run an application (Flask, FastAPI, Django, etc.)
     """
 
-    # for show in shows:
-    #     show.run()
+    # Define the shows
+    rrc_shows = [
+        "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-izvoare-de-filosofie/",
+        "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-pagini-de-istorie/",
+        "https://www.radioromaniacultural.ro/emisiuni/confluente/",
+        "https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/",
+        "https://www.radioromaniacultural.ro/podcast/o-ora-cu-dana/"
+    ]
 
-    pu = PodcastUploader(
-        RRCShow('https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/').scrape(max_episodes=2)
-    )
-    pu.to_pastebin()
+    # Scrape the podcasts
+    podcasts = [RRCShow(url=url).scrape() for url in rrc_shows]
+
+    # Upload the podcasts to Dropbox
+    PodcastsUploader(
+        podcasts=podcasts,
+        dropbox_folder=os.getenv('DROPBOX_FOLDER'),
+        dropbox_token=os.getenv('DROPBOX_ACCESS_TOKEN'),
+    ).to_dropbox()
+
+
+
