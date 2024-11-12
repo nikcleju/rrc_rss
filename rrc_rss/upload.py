@@ -33,13 +33,13 @@ class PodcastsUploader():
         self.dropbox_token = dropbox_token
         self.dropbox_folder = dropbox_folder
 
-    @classmethod
+    @staticmethod
     def filename(podcast: Podcast):
         return slugify(podcast.name) + '.xml'
 
     def to_file(self, podcast: Podcast):
         for podcast in self.podcasts:
-            podcast.rss_file(self.filename(podcast))
+            podcast.rss_file(PodcastsUploader.filename(podcast))
 
     def to_gist(self):
         if self.gist_token:
@@ -47,19 +47,22 @@ class PodcastsUploader():
             gists = gist_api.get_gists()
 
             for podcast in self.podcasts:
+
+                filename = PodcastsUploader.filename(podcast)
+
                 # Check if the gist is already present
                 is_gist_present = False
                 for gist in gists:
-                    if self.filename(podcast) in gist['files']:
+                    if filename in gist['files']:
                         is_gist_present = True
                         break
 
                 if is_gist_present:
-                    logging.info(f'Updating gist {self.filename(podcast)}')
-                    gist_api.update_gist(file_name=self.filename)
+                    logging.info(f'Updating gist {filename}')
+                    gist_api.update_gist(file_name=filename)
                 else:
-                    logging.info(f'Creating gist {self.filename(podcast)}')
-                    gist_api.create_gist(file_name=self.filename(podcast))
+                    logging.info(f'Creating gist {filename}')
+                    gist_api.create_gist(filename)
         else:
             logging.info('No Github token provided. Not pushing to Github gists.')
 
@@ -96,7 +99,7 @@ class PodcastsUploader():
         for podcast in self.podcasts:
 
             # Define the file path
-            file_path = f'{self.dropbox_folder}/{self.filename(podcast)}'
+            file_path = f'{self.dropbox_folder}/{PodcastsUploader.filename(podcast)}'
 
             # Upload data
             try:

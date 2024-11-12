@@ -74,15 +74,19 @@ $ rrc_rss
 
 ## Podcasts
 
-Podcast XML files are uploaded to Github Gists.
+Podcast XML files are uploaded to Dropbox, and are updated daily. Add the links to your podcast player.
 
-Add the following links to your podcast player:
+https://www.dropbox.com/scl/fo/wvivrur6f2z926awi2i36/AA3gYk4FUZj3wuTPGQdr6oo?rlkey=igq79picfab145b4q2e21vzvm&e=3&st=vrofu90j&dl=0
 
-- [Idei în nocturnă - Izvoare de filozofie](https://gist.githubusercontent.com/nikcleju/6ec549decf33e80ba73705395aa07dfd/raw/xml_idei_in_nocturna_izvoare_de_filosofie.xml)
+<!-- Podcast XML files are uploaded to Github Gists. -->
+
+<!-- Add the following links to your podcast player: -->
+
+<!-- - [Idei în nocturnă - Izvoare de filozofie](https://gist.githubusercontent.com/nikcleju/6ec549decf33e80ba73705395aa07dfd/raw/xml_idei_in_nocturna_izvoare_de_filosofie.xml)
 - [Idei în nocturnă - Pagini de istorie](https://gist.githubusercontent.com/nikcleju/40bfe574904083f529c92be0f20b7fd2/raw/xml_idei_in_nocturna_pagini_de_istorie.xml)
 - [Texte și pretexte](https://gist.githubusercontent.com/nikcleju/5c1b96588c51261ad6ef72d315a750ab/raw/xml_texte_si_pretexte.xml)
 - [Confluențe](https://gist.githubusercontent.com/nikcleju/47fa89fa73ead88bb2b92357ed1585f6/raw/xml_confluente.xml)
-- [O oră cu Dana](https://gist.githubusercontent.com/nikcleju/eb862e337a3ed92697292e99043f3bcb/raw/xml_o_ora_cu_dana.xml)
+- [O oră cu Dana](https://gist.githubusercontent.com/nikcleju/eb862e337a3ed92697292e99043f3bcb/raw/xml_o_ora_cu_dana.xml) -->
 
 <!-- ## Development
 
