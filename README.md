@@ -58,25 +58,27 @@ See also
 
 Scraps the RRC Emisiuni webpage and creates a RSS feed for each show.
 
-## Install it from PyPI
+## Podcasts
+
+Podcast XML files are available on Dropbox, and are updated daily. Add the URLs of the XML files to your podcast player.
+
+[Go to RSS feeds](https://www.dropbox.com/scl/fo/xdfrvicmk8pv9awnirm5m/AL8MHzZweQp_zIsDOKosk0I?rlkey=ttm07rrkn2ospx308j24ueq1t&st=9l94i9j2&dl=0)
+
+## Application
+
+### Install it from PyPI
 
 ```bash
 pip install rrc_rss
 ```
 
-## Usage
+### Usage
 
 ```bash
 $ python -m rrc_rss
 #or
 $ rrc_rss
 ```
-
-## Podcasts
-
-Podcast XML files are uploaded to Dropbox , and are updated daily. Add the URLs of the XML files to your podcast player.
-
-[Go to RSS feeds](https://www.dropbox.com/scl/fo/wvivrur6f2z926awi2i36/AA3gYk4FUZj3wuTPGQdr6oo?rlkey=igq79picfab145b4q2e21vzvm&e=3&st=vrofu90j&dl=0)
 
 <!-- Podcast XML files are uploaded to Github Gists. -->
 

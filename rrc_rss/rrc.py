@@ -9,8 +9,12 @@ logging.basicConfig(level=logging.INFO)
 
 from rrc_rss.pipelines import ShowDescriptionItem, EpisodeItem
 
-class DateTimeParser:
 
+DATA_FOLDER='data'
+DATA_FILE_SHOWLIST=f"{DATA_FOLDER}/shows.json"
+
+
+class DateTimeParser:
     months = {
         'Ianuarie': 'January',
         'Februarie': 'February',
@@ -36,23 +40,29 @@ class DateTimeParser:
 
 class RRCShowSpider(scrapy.Spider):
     name = 'show_spider'
-
     custom_settings = {
         'ITEM_PIPELINES': {
             'rrc_rss.pipelines.CreatePodcastPipeline': 300
         }
     }
 
-    def __init__(self, max_episodes=None, do_cache=False, *args, **kwargs):
+    def __init__(self, max_episodes=None, min_episodes=0, do_cache=False, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max_episodes = max_episodes
+        self.min_episodes = min_episodes
         self.do_cache = do_cache
 
     def parse(self, response):
+        """
+        Parse a show page
+        :param response: the response object
+        """
+
         title = response.css('h1.cat-header__title::text').get(default='').strip()
         author = response.css('span.cat-header__descriere__realizator::text').get(default='').strip()
         program = response.css('span.cat-header__descriere__program strong::text').get(default='')
         description = response.css('p.cat-header__descriere::text').get(default='')
+        category = response.url.split('/')[-3].capitalize()
 
         # Send first the podcast description item
         yield ShowDescriptionItem(
@@ -60,17 +70,25 @@ class RRCShowSpider(scrapy.Spider):
             author=author,
             program=program,
             description=description,
+            category=category,
             website=response.url)
 
         # Get episode urls
         episode_urls = response.css('div.news-item.news-item--with-audio a.link::attr(href)').getall()
+
+        # If the show has too few episodes, skip it
+        if len(episode_urls) < self.min_episodes:
+            logging.info(f"Skipping {title} because it has only {len(episode_urls)} episodes")
+            return
+
+        # Limit the number of episodes
         if self.max_episodes:
             episode_urls = episode_urls[:self.max_episodes]
 
         # Load episode urls from pickle file
         old_episode_urls = []
         if self.do_cache:
-            pkl_filename = 'cache/' + slugify(title) + '.pkl'
+            pkl_filename = DATA_FOLDER + "/" + slugify(title) + '.pkl'
             try:
                 with open(pkl_filename, 'rb') as f:
                     old_episode_urls = pickle.load(f)
@@ -91,17 +109,25 @@ class RRCShowSpider(scrapy.Spider):
                 pickle.dump(episode_urls, f)
 
     def parse_episode(self, response, show_name):
+        """
+        Parse an episode page
+        :param response: the response object
+        :param show_name: the name of the show
+        """
 
+        # Get episode details
         title = response.css('article.articol h1::text').get(default='').strip()
         datestr = response.css('p.articol__autor-data::text').get(default='').strip()
         date = DateTimeParser.parse(datestr) if datestr else datetime.now()
         paragraphs = response.css('#__content p').xpath('string(.)').getall()
         description = '\n'.join(paragraphs)
 
+        # Get audio url and type
         audio_elem = response.css('source').attrib
         audio_url = audio_elem.get('src')
         audio_type = audio_elem.get('type')
 
+        # Send the episode item
         if audio_url:
             yield EpisodeItem(
                 show_name=show_name,
@@ -114,23 +140,35 @@ class RRCShowSpider(scrapy.Spider):
 
 
 class RRCShowListSpider(scrapy.Spider):
-    name = 'shows_list_spider'
+    name = 'show_list_spider'
+    custom_settings = {
+        'FEEDS' : {
+            DATA_FILE_SHOWLIST: {'format': 'jsonlines', 'overwrite': True}
+        }
+    }
 
-    def __init__(self, min_episodes=0, do_cache=False, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.min_episodes = min_episodes
-        self.do_cache = do_cache
 
     def parse(self, response):
-        show_urls = response.css('div.news-item a.link::attr(href)').getall()
-        for url in show_urls:
-            yield response.follow(url, callback=RRCShowSpider.parse)
+        """
+        Parse a show list page
+        :param response: the response object
+        """
 
-    def parse_show(self, response):
-        show_spider = RRCShowSpider(url=response.url, max_episodes=self.min_episodes)
-        show = next(show_spider.parse(response))
-        if show and len(show.episodes) >= self.min_episodes:
-            self.podcasts.append(show)
-        return self.podcasts
+        # Get page title (e.g. Emisiuni, Podcast)
+        page_title = response.css('h1.cat-header__title::text').get(default='').strip()
 
+        # Get shows
+        news_items = response.css('div.news-item')
+        for item in news_items:
+            title = item.css('a.link::text').get()               # Show title
+            relative_url = item.css('a.link::attr(href)').get()  # Show relative URL
+            absolute_url = response.urljoin(relative_url)        # Convert to absolute URL
+
+            yield {
+                'category': page_title,
+                'title': title,
+                'url': absolute_url
+            }
 

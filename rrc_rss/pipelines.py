@@ -16,6 +16,7 @@ class ShowDescriptionItem(Item):
     author = Field()
     program = Field()
     description = Field()
+    category = Field()
     website = Field()
 
 class EpisodeItem(Item):
@@ -52,8 +53,13 @@ class CreatePodcastPipeline:
                     website=item['website'],
                     explicit=False
                 )
+                # Sneak the category attribute into the podcast object
+                # Don't use built-in 'category' attribute, use a custom one
+                self.podcasts[item['title']].show_category = item['category']
+
             else:
                 logging.debug(f"Podcast {item['title']} already exists")
+
         # Add an episode to an existing podcast
         elif isinstance(item, EpisodeItem):
             show_name = item['show_name']

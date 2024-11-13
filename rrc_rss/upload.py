@@ -41,7 +41,13 @@ class PodcastsUploader():
 
     @staticmethod
     def filename(podcast: Podcast):
-        return slugify(podcast.name) + '.xml'
+
+        # Add show category in name, e.g. Emisiuni-Texte-si-pretexte.xml
+        filename = ''
+        if hasattr(podcast, 'show_category'):
+            filename += podcast.show_category + '-'
+        filename += slugify(podcast.name).capitalize() + '.xml'
+        return filename
 
     def to_file(self, podcast: Podcast):
         for podcast in self.podcasts:
