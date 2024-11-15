@@ -11,3 +11,4 @@ python-dotenv
 lxml_html_clean
 dropbox
 scrapy
+omegaconf

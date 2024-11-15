@@ -4,14 +4,11 @@ import scrapy
 import pickle
 from slugify import slugify
 from datetime import datetime
-import logging
-logging.basicConfig(level=logging.INFO)
-
+import rrc_rss.config
 from rrc_rss.pipelines import ShowDescriptionItem, EpisodeItem
 
-
-DATA_FOLDER='data'
-DATA_FILE_SHOWLIST=f"{DATA_FOLDER}/shows.json"
+import logging
+logger = logging.getLogger('RRC_RSS')
 
 
 class DateTimeParser:
@@ -52,6 +49,8 @@ class RRCShowSpider(scrapy.Spider):
         self.min_episodes = min_episodes
         self.do_cache = do_cache
 
+        self.episodes_url_parsed = []
+
     def parse(self, response):
         """
         Parse a show page
@@ -78,7 +77,7 @@ class RRCShowSpider(scrapy.Spider):
 
         # If the show has too few episodes, skip it
         if len(episode_urls) < self.min_episodes:
-            logging.info(f"Skipping {title} because it has only {len(episode_urls)} episodes")
+            logger.info(f"Skipping {title} because it has only {len(episode_urls)} episodes")
             return
 
         # Limit the number of episodes
@@ -88,10 +87,11 @@ class RRCShowSpider(scrapy.Spider):
         # Load episode urls from pickle file
         old_episode_urls = []
         if self.do_cache:
-            pkl_filename = DATA_FOLDER + "/" + slugify(title) + '.pkl'
+            pkl_filename = rrc_rss.config.config.cache.dir + "/" + slugify(title) + '.pkl'
             try:
                 with open(pkl_filename, 'rb') as f:
                     old_episode_urls = pickle.load(f)
+                    logger.debug(f"Loaded {len(old_episode_urls)} episodes from {pkl_filename}")
             except FileNotFoundError:
                 pass
 
@@ -106,7 +106,8 @@ class RRCShowSpider(scrapy.Spider):
         # Save episode urls to pickle file
         if self.do_cache:
             with open(pkl_filename, 'wb') as f:
-                pickle.dump(episode_urls, f)
+                pickle.dump(self.episodes_url_parsed, f)
+                logger.debug(f"Saved {len(self.episodes_url_parsed)} episodes to {pkl_filename}")
 
     def parse_episode(self, response, show_name):
         """
@@ -127,6 +128,8 @@ class RRCShowSpider(scrapy.Spider):
         audio_url = audio_elem.get('src')
         audio_type = audio_elem.get('type')
 
+        self.episodes_url_parsed.append(response.url)
+
         # Send the episode item
         if audio_url:
             yield EpisodeItem(
@@ -143,7 +146,7 @@ class RRCShowListSpider(scrapy.Spider):
     name = 'show_list_spider'
     custom_settings = {
         'FEEDS' : {
-            DATA_FILE_SHOWLIST: {'format': 'jsonlines', 'overwrite': True}
+            rrc_rss.config.config.cache.file_shows: {'format': 'jsonlines', 'overwrite': True}
         }
     }
 

@@ -1,14 +1,16 @@
 
 from slugify import slugify
 from podgen import Podcast
+import hashlib
 import pickle
+import re
 import gistyc
 import dropbox
+import rrc_rss.config
 import rrc_rss.pastebin as pastebin
 
 import logging
-logging.basicConfig(level=logging.INFO)
-
+logger = logging.getLogger('RRC_RSS')
 
 class PodcastsUploader():
 
@@ -70,13 +72,13 @@ class PodcastsUploader():
                         break
 
                 if is_gist_present:
-                    logging.info(f'Updating gist {filename}')
+                    logger.debug(f'Updating gist {filename}')
                     gist_api.update_gist(file_name=filename)
                 else:
-                    logging.info(f'Creating gist {filename}')
+                    logger.debug(f'Creating gist {filename}')
                     gist_api.create_gist(filename)
         else:
-            logging.info('No Github token provided. Not pushing to Github gists.')
+            logger.warning('No Github token provided. Not pushing to Github gists.')
 
 
 
@@ -92,17 +94,17 @@ class PodcastsUploader():
                                 format='xml',
                                 private='0',
                                 expire='N')
-            logging.info(f'Pastebin URL: {result}')
+            logger.debug(f'Pastebin URL: {result}')
 
 
     def to_dropbox(self):
 
         if not self.dropbox_token:
-            logging.info('No Dropbox token provided. Not pushing to Dropbox.')
+            logger.warning('No Dropbox token provided. Not pushing to Dropbox.')
             return
 
         if not self.dropbox_refresh_token:
-            logging.info('No Dropbox refresh token provided. Not pushing to Dropbox.')
+            logger.warning('No Dropbox refresh token provided. Not pushing to Dropbox.')
             return
 
         # Connect to Dropbox
@@ -113,21 +115,49 @@ class PodcastsUploader():
             app_secret=self.dropbox_app_secret
         )
 
+        # Read existing file content hashes
+        try:
+            with open(rrc_rss.config.config.cache.file_hashes, 'rb') as f:
+                hashes = pickle.load(f)
+                logger.info(f"Hashes loaded from {rrc_rss.config.config.cache.file_hashes}")
+        except FileNotFoundError:
+            hashes = {}
+
         for podcast in self.podcasts:
 
             # Define the file path
             file_path = f'{self.dropbox_folder}/{PodcastsUploader.filename(podcast)}'
 
-            # Upload data
-            try:
-                dbx.files_upload(
-                    podcast.rss_str().encode(), file_path, mode=dropbox.files.WriteMode("overwrite"))
-            except Exception as e:
-                logging.error(f"Error uploading {podcast.name} to Dropbox: {e}")
+            # Compute the file hash and compare with the old one
+            # Remove the lastBuildDate tag before hashing, as this changes every time
+            file_data = podcast.rss_str()
+            file_data = re.sub(r"<lastBuildDate>.*?</lastBuildDate>", "<lastBuildDate></lastBuildDate>", file_data, flags=re.DOTALL)
+            file_data = file_data.encode()
+            file_hash = hashlib.md5(file_data).hexdigest()
+            file_unchanged = file_path in hashes and hashes[file_path] == file_hash
 
-            logging.info(f"{podcast.name} written to Dropbox at {file_path}")
+            # Upload only if the file has changed
+            if not file_unchanged:
+                try:
+                    dbx.files_upload(
+                        podcast.rss_str().encode(),
+                        file_path,
+                        mode=dropbox.files.WriteMode("overwrite")
+                    )
+                except Exception as e:
+                    logger.error(f"Error uploading {podcast.name} to Dropbox: {e}")
 
-        # Save podcasts files so we can reload them next time
-        pickle_file = 'podcasts.pkl'
-        with open(pickle_file, 'wb') as f:
-            pickle.dump(self.podcasts, f)
+                logger.info(f"{podcast.name} uploaded to Dropbox at {file_path}")
+
+                # Save the new hash
+                hashes[file_path] = file_hash
+
+            else:
+                logger.debug(f"{podcast.name} unchanged, not uploaded to Dropbox")
+
+        # Save the new hashes
+        with open(rrc_rss.config.config.cache.file_hashes, 'wb') as f:
+            pickle.dump(hashes, f)
+            logger.info(f"Hashes saved to {rrc_rss.config.config.cache.file_hashes}")
+
+

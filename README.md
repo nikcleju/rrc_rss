@@ -56,11 +56,13 @@ See also
 [![codecov](https://codecov.io/gh/nikcleju/rrc_rss/branch/main/graph/badge.svg?token=rrc_rss_token_here)](https://codecov.io/gh/nikcleju/rrc_rss)
 [![CI](https://github.com/nikcleju/rrc_rss/actions/workflows/main.yml/badge.svg)](https://github.com/nikcleju/rrc_rss/actions/workflows/main.yml)
 
-Scraps the RRC Emisiuni webpage and creates a RSS feed for each show.
+Scraps the RRC Emisiuni and Podcast webpages and creates RSS feeds for each show.
 
 ## Podcasts
 
-Podcast XML files are available on Dropbox, and are updated daily. Add the URLs of the XML files to your podcast player.
+Podcast XML files are available on Dropbox, and are updated daily. Copy the URLs of the feeds you want to listen to and add them to your podcast player.
+
+Important: When copying the URL, make sure to replace the ending "dl=0" "dl=1", to get the raw file and not the Dropbox page.
 
 [Go to RSS feeds](https://www.dropbox.com/scl/fo/xdfrvicmk8pv9awnirm5m/AL8MHzZweQp_zIsDOKosk0I?rlkey=ttm07rrkn2ospx308j24ueq1t&st=9l94i9j2&dl=0)
 

@@ -1,0 +1,39 @@
+
+title: "My RRC configuration"
+
+shows:
+
+  # Add all shows from the following URLs. Each individual show URL is turned into a podcast
+  showlists:
+    - "https://www.radioromaniacultural.ro/emisiuni"
+    - "https://www.radioromaniacultural.ro/podcast"
+
+  # Add specific shows by URL. Each URL is turned into a podcast
+  shows:
+    - "https://www.radioromaniacultural.ro/emisiuni/confluente/"
+    - "https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/"
+
+  # Combo podcasts which group multiple shows together into a single podcast
+  combos:
+    - name: "My RRC"
+      description: "Interesting podcasts from Radio Romania Cultural"
+      urls:
+        - "https://www.radioromaniacultural.ro/emisiuni/confluente/"
+        - "https://www.radioromaniacultural.ro/emisiuni/texte-si-pretexte/"
+        - "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-izvoare-de-filosofie/"
+        - "https://www.radioromaniacultural.ro/emisiuni/idei-in-nocturna-pagini-de-istorie/"
+        - "https://www.radioromaniacultural.ro/podcast/in-mintea-ta/"
+        - "https://www.radioromaniacultural.ro/podcast/o-ora-cu-dana/"
+
+options:
+  # max_episodes: 10    # Only keep the last n episodes of a show. Comment out to keep all
+  min_episodes: 0       # Only consider shows with at least n episodes. 0 means no minimum
+
+cache:
+  enabled:        true                 # Enable caching of podcast data
+  dir:            "data"               # Directory to store cached data
+  file_shows:     "data/shows.json"    # JSONlines files to store list of shows
+  file_podcasts:  "data/podcasts.pkl"  # File to store cached podcast data
+  file_hashes:    "data/hashes.pkl"    # File to store hashes of xml files uploaded
+
+
