@@ -31,9 +31,9 @@ options:
 
 cache:
   enabled:        true                 # Enable caching of podcast data
-  dir:            "data"               # Directory to store cached data
-  file_shows:     "data/shows.json"    # JSONlines files to store list of shows
-  file_podcasts:  "data/podcasts.pkl"  # File to store cached podcast data
-  file_hashes:    "data/hashes.pkl"    # File to store hashes of xml files uploaded
+  dir:            "/home/ncleju/Work/RRC_RSS/data"               # Directory to store cached data
+  file_shows:     "/home/ncleju/Work/RRC_RSS/data/shows.json"    # JSONlines files to store list of shows
+  file_podcasts:  "/home/ncleju/Work/RRC_RSS/data/podcasts.pkl"  # File to store cached podcast data
+  file_hashes:    "/home/ncleju/Work/RRC_RSS/data/hashes.pkl"    # File to store hashes of xml files uploaded
 
 
